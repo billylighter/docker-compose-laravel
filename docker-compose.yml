@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+        - ./web:/var/www/
+        - ./_docker/nginx/conf.d/:/etc/nginx/conf.d/
+    ports:
+        - '8080:80'
+    depends_on:
+        - app
+    container_name: project_nginx
+
+  app:
+    build:
+      context: .
+      dockerfile: _docker/app/Dockerfile
+    volumes:
+        - ./web:/var/www/
+    depends_on:
+        - db
+    container_name: project_app
+
+  db:
+    image: mysql:8.0
+    restart: always
+    volumes:
+        - ./tmp/db:/var/lib/mysql
+    environment:
+        MYSQL_DATABASE: laradocker
+        MYSQL_ROOT_PASSWORD: root
+    ports:
+        - "8101:3306"
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8 --collation-server=utf8_general_ci
+    container_name: project_db
+
+  phpmyadmin:
+      image: phpmyadmin
+      container_name: pma
+      links:
+            - db
+      environment:
+        PMA_HOST: db
+        PMA_PORT: 3306
+        PMA_ARBITRARY: 1
+      restart: always
+      ports:
+        - 8081:80
+
